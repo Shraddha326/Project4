@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Employee Management</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 50%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>Employee Management</h1>
+
+  <h2>Add Employee</h2>
+  <input id="name" placeholder="Name">
+  <input id="role" placeholder="Role">
+  <button onclick="addEmployee()">Add</button>
+
+  <h2>Employee List</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Role</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="employeeTable"></tbody>
+  </table>
+
+  <script>
+    const apiUrl = '/employees';
+
+    async function fetchEmployees() {
+      const res = await fetch(apiUrl);
+      const employees = await res.json();
+      const table = document.getElementById('employeeTable');
+      table.innerHTML = '';
+      employees.forEach(emp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${emp.id}</td>
+          <td contenteditable="true" onblur="updateEmployee(${emp.id}, this, 'name')">${emp.name}</td>
+          <td contenteditable="true" onblur="updateEmployee(${emp.id}, this, 'role')">${emp.role}</td>
+          <td><button onclick="deleteEmployee(${emp.id})">Delete</button></td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    async function addEmployee() {
+      const name = document.getElementById('name').value;
+      const role = document.getElementById('role').value;
+      if (!name || !role) return alert('Enter both name and role');
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, role })
+      });
+      document.getElementById('name').value = '';
+      document.getElementById('role').value = '';
+      fetchEmployees();
+    }
+
+    async function updateEmployee(id, cell, field) {
+      const value = cell.innerText;
+      await fetch(`${apiUrl}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      fetchEmployees();
+    }
+
+    async function deleteEmployee(id) {
+      await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+      fetchEmployees();
+    }
+
+    // Initial fetch
+    fetchEmployees();
+  </script>
+</body>
+</html>
